@@ -67,8 +67,26 @@ void setup() {
 
   // Creazione dei task
   xTaskCreate(sensorTask, "SensorTask", 128, NULL, 2, &sensorTaskHandle);
-  xTaskCreate(nfcTask, "NFCTask", 128, NULL, 1, &nfcTaskHandle);
+  xTaskCreate(nfcTask, "NFCTask", 100, NULL, 1, &nfcTaskHandle);
   xTaskCreate(serialTask, "SerialTask", 128, NULL, 1, &serialTaskHandle);
+  
+  Serial.println("Creazione del compito 'NomeCompito'");
+  if (nfcTaskHandle != NULL) {
+    Serial.println("nfc Compito creato con successo!");
+  } else {
+    Serial.println("nfc Errore durante la creazione del compito!");
+  }
+  if (sensorTaskHandle != NULL) {
+    Serial.println("sensore Compito creato con successo!");
+  } else {
+    Serial.println("sensore Errore durante la creazione del compito!");
+  }
+  if (serialTaskHandle != NULL) {
+    Serial.println("serial Compito creato con successo!");
+  } else {
+    Serial.println("serial Errore durante la creazione del compito!");
+  }
+
 }
 
 void loop() {
