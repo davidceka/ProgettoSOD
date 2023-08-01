@@ -1,14 +1,26 @@
 #include <Wire.h>
 #include <Adafruit_PN532.h>
-#include "RTClib.h"
+#include <RTClib.h>
+#include <BH1750.h>
+#include <Adafruit_BMP280.h>
+
 
 #define IRQ   (2)
 #define RESET (3)  // Not connected by default on the NFC Shield
 
 Adafruit_PN532 nfc(IRQ, RESET);  
 RTC_DS1307 rtc;
+BH1750 lightMeter;
+Adafruit_BMP280 bmp;
+int LEDPIN=7;
+bool presenze=false;
+
 
 void setup() {
+  //led per il passa
+  pinMode(LEDPIN,OUTPUT);
+
+
   Serial.begin(9600);
   Wire.begin();
   rtc.begin();
@@ -22,6 +34,16 @@ void setup() {
 
   nfc.SAMConfig();
 
+  if (!bmp.begin()) {
+    Serial.println("Errore inizializzazione BMP280");
+    while (1);
+  }
+
+  if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+    Serial.println("Errore inizializzazione BH1750");
+    while (1);
+  }
+
   //DateTime oraCorrente(2023, 06, 28, 14, 46, 0);
   //rtc.adjust(oraCorrente);
 }
@@ -32,8 +54,17 @@ void loop() {
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };
   uint8_t uidLength;
 
-  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  float temperature = bmp.readTemperature();
+  float pressure = bmp.readPressure() / 100.0F;
+  float lux = lightMeter.readLightLevel();
 
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  if(lux<30 && presenze){
+    digitalWrite(LEDPIN, HIGH)
+  }
+  else{
+    digitalWrite(LEDPIN,LOW)
+  }
   if (success) {
     DateTime now = rtc.now();
 
@@ -52,6 +83,21 @@ void loop() {
     Serial.print(now.month(), DEC);
     Serial.print("/");
     Serial.println(now.year(), DEC);
+
+    // lettura sensori 
+    Serial.print("Temperatura: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+
+    Serial.print("Pressione: ");
+    Serial.print(pressure);
+    Serial.println(" hPa");
+
+    Serial.print("Luminosità: ");
+    Serial.print(lux);
+    Serial.println(" lux");
+
+    Serial.println();
 
     delay(1000); // Aggiungi un ritardo per evitare la lettura continua del tag
   }
