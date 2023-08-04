@@ -1,0 +1,59 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">ProjectMQTT</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/">Home</a>
+        </li>
+        {{#if isLogged}}
+        <li class="nav-item">
+          <a class="nav-link" href="/auth/logout">Log Out</a>
+        </li>
+        {{else}}
+        <li class="nav-item">
+          <a class="nav-link" href="/login">Log In</a>
+        </li>
+        {{/if}}
+        {{#if isLogged}}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Menù
+          </a>
+          
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+            {{#if isProducer}}
+            <li><a class="dropdown-item" href="transactions/newrawmaterial">Nuova Materia Prima</a></li>
+            {{/if}} 
+            {{#if isWorker}}
+            <li><a class="dropdown-item" href="/dbdataRouter/newproduct">Nuovo Prodotto</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/dbdataRouter/listproducers">Compra Materia Prima</a></li>
+            {{/if}}
+            {{#if isCustomer}}
+            <li><a class="dropdown-item" href="/dbdataRouter/listworkers">Compra Prodotto</a></li>
+            {{/if}}
+
+            
+          </ul>
+        </li>
+        {{/if}}
+        {{#if isLogged}}
+        {{else}}
+        <li class="nav-item">
+          <a class="nav-link" href="/register">Registrati</a>
+        </li>
+        {{/if}}
+        {{#if isLogged}}
+        <li class="nav-item">
+          <a class="nav-link" href="/profilo">Profilo</a>
+        </li>
+        {{/if}}
+      </ul>
+      
+    </div>
+  </div>
+</nav>

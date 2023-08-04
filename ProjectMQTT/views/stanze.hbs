@@ -1,0 +1,76 @@
+<script>
+  // Funzione per aggiornare i dati del sensore
+  function updateSensorData() {
+    $.ajax({
+      url: '/api/sensordata', // La route che restituisce i dati del sensore in formato JSON
+      method: 'GET',
+      success: function (data) {
+        // Aggiorna il contenuto delle varie colonne con i nuovi dati del sensore
+        $('#temperature').text(data.temperature);
+        $('#pressure').text(data.pressure);
+        $('#luminosity').text(data.luminosity);
+        $('#ledstate').text(data.ledstate);
+        $('#peoplecount').text(data.peoplecount);
+        $('#timestamp').text(data.timestamp);
+      },
+      error: function (xhr, status, error) {
+        console.error('Errore durante il recupero dei dati del sensore:', error);
+      }
+    });
+  }
+
+  // Esegui la funzione di aggiornamento ogni 10 secondi
+  setInterval(updateSensorData, 10000);
+</script>
+
+
+<div id="sensorDataContainer">
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">Temperatura:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="temperature">
+      {{sensorData.temperature}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">Pressione:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="pressure">
+      {{sensorData.pressure}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">Luminosità:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="luminosity">
+      {{sensorData.luminosity}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">LED State:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="ledstate">
+      {{sensorData.ledstate}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">People Count:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="peoplecount">
+      {{sensorData.peoplecount}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <h6 class="mb-0">Timestamp:</h6>
+    </div>
+    <div class="col-sm-9 text-secondary" id="timestamp">
+      {{sensorData.timestamp}}
+    </div>
+  </div>
+</div>
