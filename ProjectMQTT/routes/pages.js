@@ -16,11 +16,13 @@ router.get('/about', (req, res) => {
 
 router.get('/sensordata', (req, res) => {
     const sensorData = session.getLatestSensorData(req);
+    const userData = session.getPeopleInside(req);
     console.log(sensorData)
     if (sensorData) {
         res.render('stanze', {
             layout: 'index',
-            sensorData:sensorData
+            sensorData:sensorData,
+            user_data:userData
         })
     } else {
       res.status(404).json({ error: 'Nessun dato disponibile per l\'ultimo sensore.' });

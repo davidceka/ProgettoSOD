@@ -5,15 +5,16 @@
 #include <BH1750.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
-
-
+#include <semphr.h>
 
 // Dichiarazione dei pin per la comunicazione I2C con il modulo NFC PN532
 #define IRQ_PIN 2
 #define RESET_PIN 3
-#define LED_PIN 12
+#define LED_PIN 11
 #define CMD_SYNC_RTC "SYNC_RTC"
-
+#define LIGHT_THRESHOLD 100
+#define MAX_BRIGHTNESS 255 // Luminosità massima (valore PWM)
+#define MIN_BRIGHTNESS 0 // Luminosità minima (valore PWM)
 
 // Dichiarazione degli oggetti PN532 e RTC
 Adafruit_PN532 nfc(IRQ_PIN, RESET_PIN);
@@ -21,36 +22,32 @@ RTC_DS1307 rtc;
 BH1750 lightSensor;
 Adafruit_BMP280 bmp;
 
-
 // Dichiarazione dei task
 TaskHandle_t nfcTaskHandle;
 TaskHandle_t sensorTaskHandle;
 
+// Semaforo per la comunicazione seriale
+SemaphoreHandle_t serialMutex;
 
-// Dichiarazione della struttura dati per il trasferimento seriale
-struct DataPacket {
-  float temperature;
-  float pressure;
-  float luminosity;
-  bool ledState;
-  uint8_t peopleCount;
-  uint32_t timestamp;
-} dataPacket;
+char tag0[8]="EB5BD4EC";
+char tag1[8]="E2F6925D";
+int presenze[2]={0,0};
 
-// Prototipi delle funzioni dei task
-void nfcTask(void *pvParameters);
-void sensorTask(void *pvParameters);
-
+// Conteggio delle persone attualmente nella stanza
+int peopleCount = 0;
+int ledState=0;
 
 void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-  //impostazione pin led
-  pinMode(LED_PIN,OUTPUT);
+  serialMutex = xSemaphoreCreateMutex();
+
+  // Impostazione pin led
+  pinMode(LED_PIN, OUTPUT);
 
   // Inizializzazione del modulo NFC PN532
-  if(nfc.begin()){
+  if (nfc.begin()) {
     Serial.println(F("Modulo NFC Adafruit PN532 Inizializzato correttamente."));
     uint32_t versiondata = nfc.getFirmwareVersion();
     if (!versiondata) {
@@ -61,97 +58,119 @@ void setup() {
   }
 
   // Inizializzazione del modulo RTC DS1307
-  
   if (!rtc.begin()) {
     Serial.println(F("Impossibile inizializzare il modulo RTC. Verifica il collegamento!"));
     while (1);
   }
-  else{
+  else {
     Serial.println(F("Modulo RTC Inizializzato correttamente."));
   }
-  
+
   if (!lightSensor.begin()) {
     Serial.println(F("Impossibile inizializzare il sensore di luminosità BH1750. Verifica il collegamento!"));
     while (1);
   }
-  else{
+  else {
     Serial.println(F("Light Sensor BH1750 Inizializzato correttamente."));
   }
-  
+
   if (!bmp.begin()) {
     Serial.println(F("Impossibile trovare il sensore BMP280. Verifica il collegamento!"));
     while (1);
   }
-  else{
+  else {
     Serial.println(F("Temperature/Pressure Module BMP280 Inizializzato correttamente."));
   }
 
   // Creazione del task NFC
-  xTaskCreate(nfcTask, "NFCTask", 256, NULL, 1, &nfcTaskHandle);
-  xTaskCreate(sensorTask, "SensorTask", 128, NULL, 2, &sensorTaskHandle);
+  xTaskCreate(nfcTask, "NFCTask", 312, NULL, 1, &nfcTaskHandle);
+  xTaskCreate(sensorTask, "SensorTask", 200, NULL, 2, &sensorTaskHandle);
 
   vTaskStartScheduler(); // Avvia lo scheduler del sistema operativo
-
 }
 
 void loop() {
   // Il loop principale non fa nulla
 }
 
+
 void nfcTask(void *pvParameters) {
   (void) pvParameters;
-  String data_=String();
   while (1) {
     // Leggi il tag NFC se presente
     uint8_t success;
     uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };
     uint8_t uidLength;
+    char readTag[8]="";
 
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-    Serial.println(success);
+
     if (success) {
+      for(int i=0;i<uidLength;i++){
+        sprintf(readTag + 2 * i, "%02X", uid[i]); // 2 caratteri esadecimali per ciascun byte
+      }
+      if(!strcmp(readTag,tag0)){
+        if(presenze[0]==0){
+          presenze[0]++;
+          peopleCount++;
+        }
+        else{
+          presenze[0]--;
+          peopleCount--;
+        }
+      }
+      else{
+        if(presenze[1]==0){
+            presenze[1]++;
+            peopleCount++;
+          }
+          else{
+            presenze[1]--;
+            peopleCount--;
+          }
+      }
       DateTime now = rtc.now();
 
-      // Stampa l'ora corrente
-      Serial.print("Ora: ");
+      Serial.print(readTag);
+      Serial.print(";");
       Serial.print(now.hour(), DEC);
-      Serial.print(":");
+      Serial.print(";");
       Serial.print(now.minute(), DEC);
-      Serial.print(":");
-      Serial.println(now.second(), DEC);
-
-      // Stampa la data corrente
-      Serial.print("Data: ");
+      Serial.print(";");
+      Serial.print(now.second(), DEC);
+      Serial.print(";");
       Serial.print(now.day(), DEC);
-      Serial.print("/");
+      Serial.print(";");
       Serial.print(now.month(), DEC);
-      Serial.print("/");
+      Serial.print(";");
       Serial.println(now.year(), DEC);
+      if(lightSensor.readLightLevel()<LIGHT_THRESHOLD&&peopleCount>0){
+        int brightness = map(lightSensor.readLightLevel(), 0, LIGHT_THRESHOLD, MAX_BRIGHTNESS, MIN_BRIGHTNESS);
+        analogWrite(LED_PIN, brightness);
+        ledState=1;
+      }
+      else{
+        digitalWrite(LED_PIN,LOW);
+        ledState=0;
+      }
+    
     }
 
-    //sincronizzazione RTC
+    // Sincronizzazione RTC
     if (Serial.available() > 0) {
-      String command = Serial.readStringUntil('\n'); // Leggi la stringa fino a trovare il carattere newline
-      command.trim(); // Rimuovi eventuali spazi bianchi all'inizio e alla fine
+      String command = Serial.readStringUntil('\n');
+      command.trim();
 
-      // Controlla se il comando ricevuto è "SYNC_RTC"
       if (command.equals(CMD_SYNC_RTC)) {
-        // Esegui la sincronizzazione dell'RTC
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
         Serial.println(F("RTC sincronizzato con il timestamp di compilazione."));
       }
     }
 
     // Aggiungi un ritardo per evitare la lettura continua del tag
-    if(digitalRead(LED_PIN)==HIGH)
-    {
-      digitalWrite(LED_PIN,LOW);
-    }
-    else
-    {
-      digitalWrite(LED_PIN,HIGH);
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
@@ -168,27 +187,37 @@ void sensorTask(void *pvParameters) {
     float temperature = bmp.readTemperature();
     float pressure = bmp.readPressure() / 100.0; // Conversione da Pascal a hPa
     float luminosity = lightSensor.readLightLevel();
-
-    // Aggiornamento dei valori nella struttura dati
-    dataPacket.temperature = temperature;
-    dataPacket.pressure = pressure;
-    dataPacket.luminosity = luminosity;
-    //Serial.println("Dati Acquisiti.");
+    if(luminosity>LIGHT_THRESHOLD||peopleCount==0){
+      digitalWrite(LED_PIN,LOW);
+      ledState=0;
+    }
+    else{
+      int brightness = map(luminosity, 0, LIGHT_THRESHOLD, MAX_BRIGHTNESS, MIN_BRIGHTNESS);
+      analogWrite(LED_PIN, brightness);
+      ledState=1;
+    }
     // Aggiornamento del timestamp
     DateTime now = rtc.now();
-    dataPacket.timestamp = now.unixtime();
 
-    // Invio dei dati tramite comunicazione seriale
-    //Serial.write((uint8_t*)&dataPacket, sizeof(dataPacket));
-    /*data_= (String)dataPacket.temperature + ";" +
-                      (String)dataPacket.pressure + ";" +
-                      (String)dataPacket.luminosity + ";" +
-                      (String)dataPacket.ledState + ";" +
-                      (String)dataPacket.peopleCount + ";" +
-                      (String)dataPacket.timestamp;*/
+    if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
+      // Proteggi l'accesso alla porta seriale con il semaforo
+      Serial.print(temperature);
+      Serial.print(";");
+      Serial.print(pressure);
+      Serial.print(";");
+      Serial.print(luminosity);
+      Serial.print(";");
+      Serial.print(ledState);
+      Serial.print(";");
+      Serial.print(peopleCount);
+      Serial.print(";");
+      Serial.print(now.unixtime());
+      Serial.print("\n");
+      
 
-    //Serial.flush();
-    Serial.println("22;200;35;0;1;1691165740");
+      xSemaphoreGive(serialMutex); // Rilascia il semaforo dopo l'invio
+    }
+
     //Serial.println(sizeof(dataPacket));
 
     vTaskDelay(pdMS_TO_TICKS(5000));
