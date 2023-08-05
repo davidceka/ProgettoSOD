@@ -102,7 +102,7 @@ void nfcTask(void *pvParameters) {
     uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };
     uint8_t uidLength;
     char readTag[8]="";
-
+    int action=0;
     success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
     if (success) {
@@ -113,47 +113,33 @@ void nfcTask(void *pvParameters) {
         if(presenze[0]==0){
           presenze[0]++;
           peopleCount++;
+          action=1;
         }
         else{
           presenze[0]--;
           peopleCount--;
+          action=0;
         }
       }
       else{
         if(presenze[1]==0){
             presenze[1]++;
             peopleCount++;
+            action=1;
           }
           else{
             presenze[1]--;
             peopleCount--;
+            action=0;
           }
       }
       DateTime now = rtc.now();
 
       Serial.print(readTag);
       Serial.print(";");
-      Serial.print(now.hour(), DEC);
+      Serial.print(now.unixtime());
       Serial.print(";");
-      Serial.print(now.minute(), DEC);
-      Serial.print(";");
-      Serial.print(now.second(), DEC);
-      Serial.print(";");
-      Serial.print(now.day(), DEC);
-      Serial.print(";");
-      Serial.print(now.month(), DEC);
-      Serial.print(";");
-      Serial.println(now.year(), DEC);
-      if(lightSensor.readLightLevel()<LIGHT_THRESHOLD&&peopleCount>0){
-        int brightness = map(lightSensor.readLightLevel(), 0, LIGHT_THRESHOLD, MAX_BRIGHTNESS, MIN_BRIGHTNESS);
-        analogWrite(LED_PIN, brightness);
-        ledState=1;
-      }
-      else{
-        digitalWrite(LED_PIN,LOW);
-        ledState=0;
-      }
-    
+      Serial.println(action);
     }
 
     // Sincronizzazione RTC
