@@ -16,7 +16,7 @@ topic_sensor = "sensor_data"  # Specifica il topic MQTT su cui pubblicare i dati
 topic_user="user_data"
 
 # Funzione di callback chiamata quando il client MQTT è connesso al broker
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, rc,qos=1):
     print("Connected to MQTT broker with result code " + str(rc))
 
 # Crea un client MQTT
@@ -71,7 +71,7 @@ while True:
             
 
             # Invio del payload MQTT
-            client.publish(topic_user, str(payload))
+            client.publish(topic_user, str(payload),qos=1)
 
         if len(data_values) == 6:
             os.system('clear')
