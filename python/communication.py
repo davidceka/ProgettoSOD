@@ -89,7 +89,7 @@ while True:
                 "Timestamp": timestamp
             }
 
-            client.publish(topic_sensor, str(payload))
+            client.publish(topic_sensor, str(payload),qos=1)
 
             # Stampa i dati
             print(f'Temperature: {temperature}°C')
