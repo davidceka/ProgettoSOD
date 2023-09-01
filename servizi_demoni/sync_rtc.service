@@ -1,0 +1,15 @@
+[Unit]
+Description=Sync RTC service for Arduino
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /home/kali/projectMQTT/sync_rtc.py
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+
+

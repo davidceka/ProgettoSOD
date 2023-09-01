@@ -1,0 +1,15 @@
+[Unit]
+Description=Communication Script Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /path/to/communication.py
+WorkingDirectory=/path/to/script/directory
+Restart=always
+User=your_username
+Group=your_groupname
+
+[Install]
+WantedBy=multi-user.target
+
+

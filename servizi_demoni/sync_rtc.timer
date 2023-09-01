@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync RTC timer for Arduino
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1h
+
+[Install]
+WantedBy=timers.target
+
+
