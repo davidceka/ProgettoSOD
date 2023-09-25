@@ -109,30 +109,35 @@ void nfcTask(void *pvParameters) {
       for(int i=0;i<uidLength;i++){
         sprintf(readTag + 2 * i, "%02X", uid[i]); // 2 caratteri esadecimali per ciascun byte
       }
-      if(!strcmp(readTag,tag0)){
-        if(presenze[0]==0){
-          presenze[0]++;
-          peopleCount++;
-          action=1;
+      //if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE){
+        if(!strcmp(readTag,tag0)){
+          
+            if(presenze[0]==0){
+              presenze[0]++;
+              peopleCount++;
+              action=1;
+            }
+            else{
+              presenze[0]--;
+              peopleCount--;
+              action=0;
+            }
         }
         else{
-          presenze[0]--;
-          peopleCount--;
-          action=0;
+          if(presenze[1]==0){
+              presenze[1]++;
+              peopleCount++;
+              action=1;
+            }
+            else{
+              presenze[1]--;
+              peopleCount--;
+              action=0;
+            }
         }
-      }
-      else{
-        if(presenze[1]==0){
-            presenze[1]++;
-            peopleCount++;
-            action=1;
-          }
-          else{
-            presenze[1]--;
-            peopleCount--;
-            action=0;
-          }
-      }
+        //xSemaphoreGive(serialMutex); // Rilascia il semaforo dopo l'invio
+
+      //}
       DateTime now = rtc.now();
 
       Serial.print(readTag);
@@ -140,6 +145,10 @@ void nfcTask(void *pvParameters) {
       Serial.print(now.unixtime());
       Serial.print(";");
       Serial.println(action);
+
+      // Aggiungi un ritardo per evitare la lettura continua del tag
+    
+      vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
     // Sincronizzazione RTC
@@ -153,10 +162,7 @@ void nfcTask(void *pvParameters) {
       }
     }
 
-    // Aggiungi un ritardo per evitare la lettura continua del tag
     
-
-    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
@@ -165,7 +171,6 @@ void sensorTask(void *pvParameters) {
   TickType_t lastWakeTime = xTaskGetTickCount();
   const TickType_t samplingInterval = pdMS_TO_TICKS(1000); // Intervallo di campionamento di 1 secondo
 
-  String data_=String();
 
   
   for (;;) {
@@ -204,7 +209,6 @@ void sensorTask(void *pvParameters) {
       xSemaphoreGive(serialMutex); // Rilascia il semaforo dopo l'invio
     }
 
-    //Serial.println(sizeof(dataPacket));
 
     vTaskDelay(pdMS_TO_TICKS(5000));
   }
