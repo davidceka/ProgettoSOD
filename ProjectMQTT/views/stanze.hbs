@@ -18,10 +18,10 @@
         var usersInsideHtml = '';
         data.usersInside.forEach(function (user) {
           usersInsideHtml += '<p>' + user.user_tag + '</p><br>';
-          const timestamp = new Date(user.timestamp * 1000);
-          const formattedTimestamp = `${timestamp.getDate()}/${timestamp.getMonth() + 1}/${timestamp.getFullYear()} ${timestamp.getHours()}:${timestamp.getMinutes()}:${timestamp.getSeconds()}`;
+          const timestamp = dayjs(user.timestamp * 1000); // Utilizza dayjs per il timestamp
+          const formattedTimestamp = timestamp.format("DD/MM/YYYY HH:mm:ss");
 
-          usersInsideHtml += '<p>' + moment(formattedTimestamp).format("DD/MM/YYYY HH:mm:ss") + '</p>';
+          usersInsideHtml += '<p>' + formattedTimestamp + '</p>';
         });
         $('#userTags').html(usersInsideHtml);
       },
