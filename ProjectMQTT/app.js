@@ -31,7 +31,6 @@ const connection = mysql.createConnection({
 
 const pagesRouter=require('./routes/pages')
 const stanzeRouter=require('./routes/stanze')
-const dbdataRouter=require('./routes/dbdata')
 
 
 
@@ -53,7 +52,6 @@ app.set('views', path.join(__dirname, "views"))
 // Definisci le tue route qui
 app.use('/',pagesRouter)
 app.use('/stanze',stanzeRouter)
-app.use('/dbdataRouter', dbdataRouter)
 
 app.get('/api/sensordata', (req, res) => {
   // Esegui la query per ottenere l'ultimo dato del sensore dalla tabella sensor_data
