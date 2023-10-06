@@ -190,7 +190,7 @@ void sensorTask(void *pvParameters) {
     // Aggiornamento del timestamp
     DateTime now = rtc.now();
 
-    if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
+    //if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
       // Proteggi l'accesso alla porta seriale con il semaforo
       Serial.print(temperature);
       Serial.print(";");
@@ -206,8 +206,8 @@ void sensorTask(void *pvParameters) {
       Serial.print("\n");
       
 
-      xSemaphoreGive(serialMutex); // Rilascia il semaforo dopo l'invio
-    }
+      //xSemaphoreGive(serialMutex); // Rilascia il semaforo dopo l'invio
+    //}
 
 
     vTaskDelay(pdMS_TO_TICKS(5000));
