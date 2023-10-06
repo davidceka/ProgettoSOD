@@ -4,6 +4,7 @@ import os
 import paho.mqtt.client as mqtt
 import datetime
 import signal
+import schedule  # Aggiungi questa riga
 
 # Alcuni codici di uscita per le eccezioni
 EXIT_SUCCESS = 0
@@ -22,7 +23,7 @@ topic_user = "user_data"
 
 # Funzione di callback chiamata quando il client MQTT è connesso al broker
 def on_connect(client, userdata, flags, rc, qos=1):
-    print("Connected to MQTT broker with result code " + str(rc))
+    print("Connected to MQTT broker with result code " + str(rc)
 
 # Gestisce l'interruzione da tastiera
 def handle_keyboard_interrupt(signal, frame):
@@ -41,9 +42,18 @@ client.on_connect = on_connect
 # Connetti il client al broker MQTT
 client.connect(broker, port)
 
-# Legge i dati inviati dalla scheda Arduino e li pubblica sul topic MQTT
+# Definizione della funzione per inviare il comando di sincronizzazione
+def send_sync_command():
+    ser.write(b"SYNC_RTC\n")
+    print("Command 'SYNC_RTC' sent to Arduino")
+
+# Definizione del lavoro di sincronizzazione ogni 30 minuti
+schedule.every(30).minutes.do(send_sync_command)
+
+# Ciclo principale
 try:
     while True:
+        schedule.run_pending()  # Esegui i lavori pianificati
         data_string = ser.readline().decode().strip()
         if data_string:
             data_values = data_string.split(";")
