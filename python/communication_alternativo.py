@@ -65,8 +65,7 @@ try:
                 minuti = dt_object.minute
                 secondi = dt_object.second
 
-                # Qui puoi fare ciò che desideri con i valori di readTag e timestamp
-                # Per esempio, convertire il timestamp in data e ora come mostrato prima
+               
 
                 print(f"Read Tag: {readTag}")
                 print(f"Anno: {anno}")

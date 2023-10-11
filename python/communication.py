@@ -23,7 +23,7 @@ topic_user = "user_data"
 
 # Funzione di callback chiamata quando il client MQTT è connesso al broker
 def on_connect(client, userdata, flags, rc, qos=1):
-    print("Connected to MQTT broker with result code " + str(rc)
+    print("Connected to MQTT broker with result code " + str(rc))
 
 # Gestisce l'interruzione da tastiera
 def handle_keyboard_interrupt(signal, frame):
